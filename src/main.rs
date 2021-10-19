@@ -1,23 +1,26 @@
-use winit::{
-    event::{Event, WindowEvent},
-    event_loop::{ControlFlow, EventLoop},
-    window::WindowBuilder,
-};
+use glutin::event::{Event, WindowEvent};
+use glutin::event_loop::{ControlFlow, EventLoop};
+use glutin::window::WindowBuilder;
+use glutin::ContextBuilder;
 
 fn main() {
-    let event_loop = EventLoop::new();
-    let window = WindowBuilder::new()
-            .with_title("Hello Window")
-            .build(&event_loop).unwrap();
+    let el = EventLoop::new();
+    let wb = WindowBuilder::new();
 
-    event_loop.run(move |event, _, control_flow| {
+    let context = ContextBuilder::new().build_windowed(wb, &el).unwrap();
+    let context = unsafe { context.make_current().unwrap() };
+
+    el.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Wait;
-
         match event {
-            Event::WindowEvent {
-                event: WindowEvent::CloseRequested,
-                window_id,
-            } if window_id == window.id() => *control_flow = ControlFlow::Exit,
+            Event::LoopDestroyed => {}
+            Event::WindowEvent { event, .. } => match event {
+                WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
+                _ => (),
+            },
+            Event::RedrawRequested(_) => {
+                context.swap_buffers().unwrap();
+            }
             _ => (),
         }
     });
