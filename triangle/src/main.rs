@@ -33,7 +33,7 @@ void main() {
 
 fn main() {
     let el = EventLoop::new();
-    let wb = WindowBuilder::new();
+    let wb = WindowBuilder::new().with_title(" ");
 
     let context = ContextBuilder::new().build_windowed(wb, &el).unwrap();
     let context = unsafe { context.make_current().unwrap() };
