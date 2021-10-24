@@ -12,7 +12,7 @@ use std::mem;
 use std::ptr;
 use std::str;
 
-use utils;
+use super::utils;
 
 static VERTEX_DATA: [GLfloat; 6] = [0.0, 0.5, 0.5, -0.5, -0.5, -0.5];
 
@@ -31,7 +31,7 @@ void main() {
     out_color = vec4(1.0, 1.0, 1.0, 1.0);
 }";
 
-fn main() {
+pub fn main() {
     let el = EventLoop::new();
     let wb = WindowBuilder::new().with_title(" ");
 
