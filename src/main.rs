@@ -1,6 +1,8 @@
+#![allow(dead_code)]
+mod particles01;
 mod triangle;
 mod utils;
 
 fn main() {
-    triangle::main();
+    particles01::main();
 }
