@@ -72,10 +72,7 @@ pub fn main() {
     let program = utils::link_program(vs, fs);
 
     let vertex_buffer_data: [GLfloat; 12] = [
-		-1.0, -1.0, 0.0,
-		 1.0, -1.0, 0.0,
-		-1.0,  1.0, 0.0,
-		 1.0,  1.0, 0.0,
+        -1.0, -1.0, 0.0, 1.0, -1.0, 0.0, -1.0, 1.0, 0.0, 1.0, 1.0, 0.0,
     ];
 
     let size = context.window().inner_size();
@@ -88,7 +85,7 @@ pub fn main() {
 
     #[allow(temporary_cstring_as_ptr)]
     unsafe {
-        gl::GenBuffers(1, &mut vao); 
+        gl::GenBuffers(1, &mut vao);
         gl::BindVertexArray(vao);
 
         gl::GenBuffers(1, &mut vertex_vbo);
@@ -97,7 +94,7 @@ pub fn main() {
             gl::ARRAY_BUFFER,
             (vertex_buffer_data.len() * mem::size_of::<GLfloat>()) as GLsizeiptr,
             mem::transmute(&vertex_buffer_data[0]),
-            gl::STATIC_DRAW
+            gl::STATIC_DRAW,
         );
 
         gl::GenBuffers(1, &mut position_vbo);
@@ -106,12 +103,13 @@ pub fn main() {
             gl::ARRAY_BUFFER,
             (max_particles * 4 * mem::size_of::<GLfloat>()) as GLsizeiptr,
             ptr::null(),
-            gl::STREAM_DRAW
+            gl::STREAM_DRAW,
         );
 
         gl::UseProgram(program);
-        
-        u_resolution = gl::GetUniformLocation(program, CString::new("u_resolution").unwrap().as_ptr());
+
+        u_resolution =
+            gl::GetUniformLocation(program, CString::new("u_resolution").unwrap().as_ptr());
         u_time = gl::GetUniformLocation(program, CString::new("u_time").unwrap().as_ptr());
 
         gl::Uniform2f(u_resolution, size.width as f32, size.height as f32);
