@@ -1,44 +1,62 @@
 extern crate gl;
-
+use super::utils;
 use gl::types::*;
-
+use glutin::dpi::LogicalPosition;
 use glutin::event::{Event, WindowEvent};
 use glutin::event_loop::{ControlFlow, EventLoop};
 use glutin::window::WindowBuilder;
 use glutin::ContextBuilder;
-
+use glutin::GlProfile;
 use std::ffi::CString;
 use std::mem;
 use std::ptr;
 use std::str;
 
-use super::utils;
-
-static VERTEX_DATA: [GLfloat; 6] = [0.0, 0.5, 0.5, -0.5, -0.5, -0.5];
-
 static VS_SRC: &'static str = "
 #version 150
-in vec2 position;
+in vec3 position;
+in vec3 color;
+out vec3 v_color;
+
 void main() {
-    gl_Position = vec4(position, 0.0,  1.0);
+    gl_Position = vec4(position,  1.0);
+    v_color = color;
 }";
 
 static FS_SRC: &'static str = "
 #version 150
+in vec3 v_color;
 out vec4 out_color;
 
 void main() {
-    out_color = vec4(1.0, 1.0, 1.0, 1.0);
+    out_color = vec4(v_color, 1.0);
 }";
 
 pub fn main() {
     let el = EventLoop::new();
     let wb = WindowBuilder::new().with_title(" ");
 
-    let context = ContextBuilder::new().build_windowed(wb, &el).unwrap();
+    let context = ContextBuilder::new()
+        .with_gl_profile(GlProfile::Core)
+        .build_windowed(wb, &el)
+        .unwrap();
     let context = unsafe { context.make_current().unwrap() };
 
+    let monitor = context.window().current_monitor().unwrap();
+    let size = context.window().inner_size();
+
+    let x = (monitor.size().width - size.width) / 2;
+    let y = (monitor.size().height - size.height) / 2;
+
+    context
+        .window()
+        .set_outer_position(LogicalPosition::new(x, y));
+
     gl::load_with(|symbol| context.get_proc_address(symbol));
+
+    let vertices: Vec<f32> = vec![
+        0.5, -0.5, 0.0, 1.0, 0.0, 0.0, -0.5, -0.5, 0.0, 0.0, 1.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 1.0,
+    ];
 
     let vs = utils::compile_shader(VS_SRC, gl::VERTEX_SHADER);
     let fs = utils::compile_shader(FS_SRC, gl::FRAGMENT_SHADER);
@@ -56,23 +74,33 @@ pub fn main() {
         gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
         gl::BufferData(
             gl::ARRAY_BUFFER,
-            (VERTEX_DATA.len() * mem::size_of::<GLfloat>()) as GLsizeiptr,
-            mem::transmute(&VERTEX_DATA[0]),
+            (vertices.len() * mem::size_of::<GLfloat>()) as GLsizeiptr,
+            vertices.as_ptr() as *const GLvoid,
             gl::STATIC_DRAW,
         );
 
         gl::UseProgram(program);
-        gl::BindFragDataLocation(program, 0, CString::new("out_color").unwrap().as_ptr());
 
         let pos_attr = gl::GetAttribLocation(program, CString::new("position").unwrap().as_ptr());
         gl::EnableVertexAttribArray(pos_attr as GLuint);
         gl::VertexAttribPointer(
             pos_attr as GLuint,
-            2,
+            3,
             gl::FLOAT,
-            gl::FALSE as GLboolean,
-            0,
+            gl::FALSE,
+            (6 * mem::size_of::<GLfloat>()) as GLint,
             ptr::null(),
+        );
+
+        let col_attr = gl::GetAttribLocation(program, CString::new("color").unwrap().as_ptr());
+        gl::EnableVertexAttribArray(col_attr as GLuint);
+        gl::VertexAttribPointer(
+            col_attr as GLuint,
+            3,
+            gl::FLOAT,
+            gl::FALSE,
+            (6 * mem::size_of::<GLfloat>()) as GLint,
+            (3 * mem::size_of::<GLfloat>()) as *const GLvoid,
         );
     }
 
@@ -91,11 +119,12 @@ pub fn main() {
                     }
                     *control_flow = ControlFlow::Exit
                 }
+                WindowEvent::Resized(physical_size) => context.resize(physical_size),
                 _ => (),
             },
             Event::RedrawRequested(_) => {
                 unsafe {
-                    gl::ClearColor(0.3, 0.3, 0.3, 1.0);
+                    gl::ClearColor(0.0, 0.0, 0.0, 1.0);
                     gl::Clear(gl::COLOR_BUFFER_BIT);
                     gl::DrawArrays(gl::TRIANGLES, 0, 3);
                 }
