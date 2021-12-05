@@ -12,7 +12,7 @@ use std::mem;
 use std::ptr;
 use std::str;
 
-static VS_SRC: &'static str = "
+static VS_SRC: &str = "
 #version 150
 in vec3 position;
 in vec3 color;
@@ -23,7 +23,7 @@ void main() {
     v_color = color;
 }";
 
-static FS_SRC: &'static str = "
+static FS_SRC: &str = "
 #version 150
 in vec3 v_color;
 out vec4 out_color;

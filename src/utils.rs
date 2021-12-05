@@ -29,9 +29,7 @@ pub fn compile_shader(src: &str, ty: GLenum) -> GLuint {
             );
             panic!(
                 "{}",
-                str::from_utf8(&buf)
-                    .ok()
-                    .expect("shader info log not valid utf8")
+                str::from_utf8(&buf).expect("shader info log not valid utf8")
             );
         }
         shader
@@ -61,9 +59,7 @@ pub fn link_program(vs: GLuint, fs: GLuint) -> GLuint {
             );
             panic!(
                 "{}",
-                str::from_utf8(&buf)
-                    .ok()
-                    .expect("program info log not valid utf8")
+                str::from_utf8(&buf).expect("program info log not valid utf8")
             );
         }
         program
