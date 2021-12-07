@@ -10,7 +10,6 @@ use rand::Rng;
 use std::ffi::CString;
 use std::mem;
 use std::ptr;
-use std::time::{Duration, Instant};
 
 static TARGET_FPS: u64 = 60;
 
@@ -152,17 +151,12 @@ pub fn main() {
     }
 
     el.run(move |event, _, control_flow| {
-        let mut start_time = Instant::now();
+        context.window().request_redraw();
 
         match event {
             Event::LoopDestroyed => {}
-            Event::WindowEvent { event, .. } => match event {
-                WindowEvent::CursorMoved { .. } => {
-                    return;
-                    // println!("Cursor Moved");
-                    // *control_flow = ControlFlow::Poll;
-                }
-                WindowEvent::CloseRequested => {
+            Event::WindowEvent { event, .. } => {
+                if event == WindowEvent::CloseRequested {
                     unsafe {
                         gl::DeleteProgram(program);
                         gl::DeleteShader(vs);
@@ -172,41 +166,11 @@ pub fn main() {
                     }
                     *control_flow = ControlFlow::Exit
                 }
-                _ => (),
-                // if event == (WindowEvent::CursorMoved { .. }) {
-                //     return;
-
-                // }
-
-                // if event == WindowEvent::CloseRequested {
-                // } else {
-                //     start_time = Instant::now();
-                //     *control_flow = ControlFlow::Poll;
-                // }
-            },
+            }
             Event::RedrawRequested(_) => {
                 context.swap_buffers().unwrap();
             }
-            _ => (),
-        }
-
-        match *control_flow {
-            ControlFlow::Exit => (),
-            _ => {
-                context.window().request_redraw();
-
-                let elapsed_duration = Instant::now().duration_since(start_time);
-
-                let elapsed_time = elapsed_duration.as_millis() as u64;
-
-                let wait_millis = match 1000 / TARGET_FPS >= elapsed_time {
-                    true => 1000 / TARGET_FPS - elapsed_time,
-                    false => 0,
-                };
-
-                let next = start_time + Duration::from_millis(wait_millis);
-                *control_flow = ControlFlow::WaitUntil(next);
-
+            Event::MainEventsCleared => {
                 let num_particles = vertices.len() / particle_size;
 
                 let mut i = 0;
@@ -269,6 +233,7 @@ pub fn main() {
                     gl::DrawArrays(gl::POINTS, 0, num_particles as i32);
                 }
             }
+            _ => (),
         }
     });
 }
@@ -290,11 +255,6 @@ fn update_mouse(mouse: &mut Mouse) -> bool {
         mouse.x += vx;
         mouse.y += vy;
         mouse.r += vr;
-
-        // vx *= 0.0;
-        // vy *= 0.0;
-        // vr *= 0.0;
-
         true
     } else {
         false
