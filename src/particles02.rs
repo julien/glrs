@@ -10,7 +10,7 @@ use rand::Rng;
 use std::ffi::CString;
 use std::mem;
 use std::ptr;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 static TARGET_FPS: u64 = 60;
 
@@ -96,7 +96,6 @@ pub fn main() {
     let mut vao = 0;
     let mut vertex_vbo = 0;
     let u_time;
-    let mut u_time_value: f32 = 0.0;
 
     #[allow(temporary_cstring_as_ptr)]
     unsafe {
@@ -114,8 +113,10 @@ pub fn main() {
         gl::EnableVertexAttribArray(0);
     }
 
+    let start_time = Instant::now();
+
     el.run(move |event, _, control_flow| {
-        let mut start_time = Instant::now();
+        context.window().request_redraw();
 
         match event {
             Event::LoopDestroyed => {}
@@ -129,32 +130,13 @@ pub fn main() {
                         gl::DeleteVertexArrays(1, &vao);
                     }
                     *control_flow = ControlFlow::Exit
-                } else {
-                    start_time = Instant::now();
-                    *control_flow = ControlFlow::Wait;
                 }
             }
             Event::RedrawRequested(_) => {
                 context.swap_buffers().unwrap();
             }
-            _ => (),
-        }
-
-        match *control_flow {
-            ControlFlow::Exit => (),
-            _ => {
-                context.window().request_redraw();
-
-                let elapsed_duration = Instant::now().duration_since(start_time);
-
-                let elapsed_time = elapsed_duration.as_millis() as u64;
-
-                let wait_millis = match 1000 / TARGET_FPS >= elapsed_time {
-                    true => 1000 / TARGET_FPS - elapsed_time,
-                    false => 0,
-                };
-
-                let next = start_time + Duration::from_millis(wait_millis);
+            Event::MainEventsCleared => {
+                let elapsed_duration = Instant::now().duration_since(start_time).as_secs_f32();
 
                 unsafe {
                     gl::ClearColor(0.0, 0.0, 0.0, 1.0);
@@ -162,7 +144,7 @@ pub fn main() {
                 }
 
                 for k in 0..max_particles {
-                    let z = (((k as f32) + u_time_value * 2.0) % 30.0) - 15.0;
+                    let z = (((k as f32) + elapsed_duration * 2.0) % 30.0) - 15.0;
                     vertices[k * 6 + 2] = z - 0.003;
                     vertices[k * 6 + 5] = z + 0.003;
                 }
@@ -174,14 +156,11 @@ pub fn main() {
                         vertices.as_ptr() as *const GLvoid,
                         gl::STATIC_DRAW,
                     );
-                    gl::Uniform1f(u_time, u_time_value);
+                    gl::Uniform1f(u_time, elapsed_duration);
                     gl::DrawArrays(gl::POINTS, 0, max_particles as i32);
                 }
-
-                u_time_value += 0.01;
-
-                *control_flow = ControlFlow::WaitUntil(next);
             }
+            _ => (),
         }
     });
 }
