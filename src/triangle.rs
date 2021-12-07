@@ -105,7 +105,8 @@ pub fn main() {
     }
 
     el.run(move |event, _, control_flow| {
-        *control_flow = ControlFlow::Wait;
+        context.window().request_redraw();
+
         match event {
             Event::LoopDestroyed => {}
             Event::WindowEvent { event, .. } => match event {
