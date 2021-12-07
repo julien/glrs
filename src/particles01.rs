@@ -10,7 +10,7 @@ use rand::Rng;
 use std::ffi::CString;
 use std::mem;
 use std::ptr;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 static TARGET_FPS: u64 = 60;
 
@@ -181,27 +181,12 @@ pub fn main() {
             Event::RedrawRequested(_) => {
                 context.swap_buffers().unwrap();
             }
-            _ => (),
-        }
-
-        match *control_flow {
-            ControlFlow::Exit => (),
-            _ => {
+            Event::MainEventsCleared => {
                 context.window().request_redraw();
 
-                let elapsed_duration = Instant::now().duration_since(start_time);
-                let elapsed_seconds = elapsed_duration.as_secs_f32();
+                let elapsed_duration = Instant::now().duration_since(start_time).as_secs_f32();
 
-                let elapsed_time = elapsed_duration.as_millis() as u64;
-
-                let wait_millis = match 1000 / TARGET_FPS >= elapsed_time {
-                    true => 1000 / TARGET_FPS - elapsed_time,
-                    false => 0,
-                };
-
-                let next = start_time + Duration::from_millis(wait_millis);
-
-                let mut new_particles = elapsed_seconds * 10000.0;
+                let mut new_particles = elapsed_duration * 10000.0;
                 if new_particles >= 0.016 * 10000.0 {
                     new_particles = 0.016 * 10000.0;
                 }
@@ -265,7 +250,7 @@ pub fn main() {
                     gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
 
                     gl::Uniform2f(u_resolution, viewport_width, viewport_height);
-                    gl::Uniform1f(u_time, elapsed_seconds);
+                    gl::Uniform1f(u_time, elapsed_duration);
 
                     gl::EnableVertexAttribArray(0);
                     gl::BindBuffer(gl::ARRAY_BUFFER, vertex_vbo);
@@ -283,9 +268,8 @@ pub fn main() {
                     gl::DisableVertexAttribArray(0);
                     gl::DisableVertexAttribArray(1);
                 }
-
-                *control_flow = ControlFlow::WaitUntil(next);
             }
+            _ => (),
         }
     });
 }
