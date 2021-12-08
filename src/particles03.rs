@@ -17,10 +17,11 @@ static VS_SRC: &str = "
 #version 330
 
 layout(location=0) in vec2 a_position;
+layout(location=1) in float a_pointsize;
 
 void main() {
     gl_Position = vec4(vec3(a_position, 1.0), 1.0);
-    gl_PointSize = 2.0;
+    gl_PointSize = a_pointsize;
 }
 ";
 
@@ -86,26 +87,30 @@ pub fn main() {
     let damp = -0.96;
     let mut rng = rand::thread_rng();
 
-    let mut mouse = Mouse {
-        x: 0.5,
-        y: 0.5,
-        r: 0.1,
-        nx: -1.0 + rng.gen::<f32>() * (1.0 - -1.0),
-        ny: -1.0 + rng.gen::<f32>() * (1.0 - -1.0),
-        nr: 0.1 + rng.gen::<f32>() * (1.0 - 0.1),
-        ex: 0.002 + rng.gen::<f32>() * (0.01 - 0.002),
-        ey: 0.002 + rng.gen::<f32>() * (0.01 - 0.002),
-        er: 0.002 + rng.gen::<f32>() * (0.01 - 0.002),
-        client_x: 0.0,
-        client_y: 0.0,
-    };
+    let max_mice = 8;
+    let mut mice: Vec<Mouse> = Vec::new();
+    for _ in 0..max_mice {
+        mice.push(Mouse {
+            x: -1.0 + rng.gen::<f32>() * (1.0 - -1.0),
+            y: -1.0 + rng.gen::<f32>() * (1.0 - -1.0),
+            r: 0.1,
+            nx: -1.0 + rng.gen::<f32>() * (1.0 - -1.0),
+            ny: -1.0 + rng.gen::<f32>() * (1.0 - -1.0),
+            nr: 0.1 + rng.gen::<f32>() * (1.0 - 0.1),
+            ex: 0.02 + rng.gen::<f32>() * (0.01 - 0.02),
+            ey: 0.02 + rng.gen::<f32>() * (0.01 - 0.02),
+            er: 0.02 + rng.gen::<f32>() * (0.01 - 0.02),
+            client_x: 0.0,
+            client_y: 0.0,
+        });
+    }
 
     for _ in 0..max_particles {
         // position (x, y)
         vertices.push(-1.0 + rng.gen::<f32>() * (1.0 - -1.0));
         vertices.push(-1.0 + rng.gen::<f32>() * (1.0 - -1.0));
         // pointsize (r)
-        vertices.push((rng.gen::<f32>() * (2.0 - 1.0)).floor() as f32);
+        vertices.push(1.0 + (rng.gen::<f32>() * (4.0 - 1.0)).floor() as f32);
         // velocity
         vertices.push(-0.03 + rng.gen::<f32>() * (0.03 - -0.03));
         vertices.push(-0.03 + rng.gen::<f32>() * (0.03 - -0.03));
@@ -148,6 +153,16 @@ pub fn main() {
             ptr::null(),
         );
         gl::EnableVertexAttribArray(0);
+
+        gl::VertexAttribPointer(
+            1,
+            1,
+            gl::FLOAT,
+            gl::FALSE,
+            (particle_size * std::mem::size_of::<f32>()) as gl::types::GLint,
+            (2 * std::mem::size_of::<f32>()) as *const GLvoid,
+        );
+        gl::EnableVertexAttribArray(1);
     }
 
     el.run(move |event, _, control_flow| {
@@ -175,19 +190,25 @@ pub fn main() {
 
                 let mut i = 0;
                 while i < vertices.len() {
-                    let dx = vertices[i] - mouse.x;
-                    let dy = vertices[i + 1] - mouse.y;
-                    let dist = (dx * dx + dy * dy).sqrt();
-
                     vertices[i + 3] += vertices[i + 5];
                     vertices[i + 4] += vertices[i + 6];
 
                     vertices[i + 5] *= 0.0;
                     vertices[i + 6] *= 0.0;
 
-                    if dist < mouse.r {
-                        vertices[i] = mouse.x + dx / dist * mouse.r;
-                        vertices[i + 1] = mouse.y + dy / dist * mouse.r;
+                    for mouse in &mice {
+                        let dx = vertices[i] - mouse.x;
+                        let dy = vertices[i + 1] - mouse.y;
+                        let dist = (dx * dx + dy * dy).sqrt();
+
+                        if dist < mouse.r {
+                            vertices[i] = mouse.x + dx / dist * mouse.r;
+                            vertices[i + 1] = mouse.y + dy / dist * mouse.r;
+                        } else {
+                            while vertices[i + 2] > 2.0 {
+                                vertices[i + 2] -= 0.1;
+                            }
+                        }
                     }
 
                     vertices[i] += vertices[i + 3];
@@ -211,14 +232,16 @@ pub fn main() {
                     i += 7;
                 }
 
-                if !update_mouse(&mut mouse) {
-                    mouse.ex = 0.007 + rng.gen::<f32>() * (0.01 - 0.007);
-                    mouse.ey = 0.005 + rng.gen::<f32>() * (0.01 - 0.005);
-                    mouse.er = 0.001 + rng.gen::<f32>() * (0.05 - 0.01);
+                for mouse in mice.iter_mut() {
+                    if !update_mouse(mouse) {
+                        mouse.ex = 0.07 + rng.gen::<f32>() * (0.01 - 0.07);
+                        mouse.ey = 0.05 + rng.gen::<f32>() * (0.01 - 0.05);
+                        mouse.er = 0.01 + rng.gen::<f32>() * (0.05 - 0.01);
 
-                    mouse.nx = -0.9 + rng.gen::<f32>() * (1.0 - -0.9);
-                    mouse.ny = -0.9 + rng.gen::<f32>() * (1.0 - -0.9);
-                    mouse.nr = 0.01 + rng.gen::<f32>() * (0.3 - 0.01);
+                        mouse.nx = -0.9 + rng.gen::<f32>() * (1.0 - -0.9);
+                        mouse.ny = -0.9 + rng.gen::<f32>() * (1.0 - -0.9);
+                        mouse.nr = 0.01 + rng.gen::<f32>() * (0.3 - 0.01);
+                    }
                 }
 
                 unsafe {
