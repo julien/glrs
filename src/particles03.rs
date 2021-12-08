@@ -110,7 +110,7 @@ pub fn main() {
         vertices.push(-1.0 + rng.gen::<f32>() * (1.0 - -1.0));
         vertices.push(-1.0 + rng.gen::<f32>() * (1.0 - -1.0));
         // pointsize (r)
-        vertices.push(1.0 + (rng.gen::<f32>() * (4.0 - 1.0)).floor() as f32);
+        vertices.push(1.0 + (rng.gen::<f32>() * (5.0 - 1.0)).floor() as f32);
         // velocity
         vertices.push(-0.03 + rng.gen::<f32>() * (0.03 - -0.03));
         vertices.push(-0.03 + rng.gen::<f32>() * (0.03 - -0.03));
@@ -204,10 +204,11 @@ pub fn main() {
                         if dist < mouse.r {
                             vertices[i] = mouse.x + dx / dist * mouse.r;
                             vertices[i + 1] = mouse.y + dy / dist * mouse.r;
-                        } else {
-                            while vertices[i + 2] > 2.0 {
-                                vertices[i + 2] -= 0.1;
-                            }
+                            vertices[i + 2] = 1.0 + rng.gen::<f32>() * (5.0 - 1.0);
+                        }
+
+                        if vertices[i + 2] > 2.0 {
+                            vertices[i + 2] -= 0.1;
                         }
                     }
 
