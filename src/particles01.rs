@@ -1,7 +1,6 @@
 extern crate gl;
 use super::utils;
 use gl::types::*;
-use glutin::dpi::LogicalPosition;
 use glutin::event::{Event, WindowEvent};
 use glutin::event_loop::{ControlFlow, EventLoop};
 use glutin::window::WindowBuilder;
@@ -69,15 +68,9 @@ pub fn main() {
 
     gl::load_with(|symbol| context.get_proc_address(symbol));
 
-    let monitor = context.window().current_monitor().unwrap();
+    utils::center_window(&context);
+
     let size = context.window().inner_size();
-
-    let x = (monitor.size().width - size.width) / 2;
-    let y = (monitor.size().height - size.height) / 2;
-
-    context
-        .window()
-        .set_outer_position(LogicalPosition::new(x, y));
 
     let max_particles = 5000;
 

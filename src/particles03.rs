@@ -1,7 +1,7 @@
 extern crate gl;
 use super::utils;
 use gl::types::*;
-use glutin::dpi::{LogicalPosition, PhysicalSize};
+use glutin::dpi::PhysicalSize;
 use glutin::event::{Event, WindowEvent};
 use glutin::event_loop::{ControlFlow, EventLoop};
 use glutin::window::WindowBuilder;
@@ -68,14 +68,7 @@ pub fn main() {
 
     gl::load_with(|symbol| context.get_proc_address(symbol));
 
-    let monitor = context.window().current_monitor().unwrap();
-
-    let x = (monitor.size().width - width) / 2;
-    let y = (monitor.size().height - height) / 2;
-
-    context
-        .window()
-        .set_outer_position(LogicalPosition::new(x, y));
+    utils::center_window(&context);
 
     let vs = utils::compile_shader(VS_SRC, gl::VERTEX_SHADER);
     let fs = utils::compile_shader(FS_SRC, gl::FRAGMENT_SHADER);

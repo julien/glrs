@@ -1,10 +1,25 @@
 extern crate gl;
-
 use gl::types::*;
-
+use glutin::dpi::LogicalPosition;
+use glutin::window::Window;
+use glutin::{ContextWrapper, PossiblyCurrent};
 use std::ffi::CString;
 use std::ptr;
 use std::str;
+
+pub fn center_window(context: &ContextWrapper<PossiblyCurrent, Window>) {
+    let window = context.window();
+    let monitor = window.current_monitor().unwrap();
+    let scale = monitor.scale_factor() as f32;
+    let size = window.outer_size();
+    let width = size.width;
+    let height = size.height;
+
+    let x = (((monitor.size().width as f32) * scale) - width as f32) / 2.0;
+    let y = (((monitor.size().height as f32) * scale) - height as f32) / 2.0;
+
+    window.set_outer_position(LogicalPosition::new(x, y));
+}
 
 pub fn compile_shader(src: &str, ty: GLenum) -> GLuint {
     unsafe {

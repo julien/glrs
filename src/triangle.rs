@@ -1,7 +1,6 @@
 extern crate gl;
 use super::utils;
 use gl::types::*;
-use glutin::dpi::LogicalPosition;
 use glutin::event::{Event, WindowEvent};
 use glutin::event_loop::{ControlFlow, EventLoop};
 use glutin::window::WindowBuilder;
@@ -42,17 +41,9 @@ pub fn main() {
         .unwrap();
     let context = unsafe { context.make_current().unwrap() };
 
-    let monitor = context.window().current_monitor().unwrap();
-    let size = context.window().inner_size();
-
-    let x = (monitor.size().width - size.width) / 2;
-    let y = (monitor.size().height - size.height) / 2;
-
-    context
-        .window()
-        .set_outer_position(LogicalPosition::new(x, y));
-
     gl::load_with(|symbol| context.get_proc_address(symbol));
+
+    utils::center_window(&context);
 
     let vertices: Vec<f32> = vec![
         0.5, -0.5, 0.0, 1.0, 0.0, 0.0, -0.5, -0.5, 0.0, 0.0, 1.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 1.0,
