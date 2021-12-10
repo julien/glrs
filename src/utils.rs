@@ -10,13 +10,14 @@ use std::str;
 pub fn center_window(context: &ContextWrapper<PossiblyCurrent, Window>) {
     let window = context.window();
     let monitor = window.current_monitor().unwrap();
-    let scale = monitor.scale_factor() as f32;
+    let monitor_scale = monitor.scale_factor() as f32;
+    let window_scale = window.scale_factor() as f32;
     let size = window.outer_size();
-    let width = size.width;
-    let height = size.height;
-
-    let x = (((monitor.size().width as f32) * scale) - width as f32) / 2.0;
-    let y = (((monitor.size().height as f32) * scale) - height as f32) / 2.0;
+    let window_width = size.width as f32;
+    let window_height = size.height as f32;
+    let x = (((monitor.size().width as f32) / monitor_scale) - (window_width / window_scale)) / 2.0;
+    let y =
+        (((monitor.size().height as f32) / monitor_scale) - (window_height / window_scale)) / 2.0;
 
     window.set_outer_position(LogicalPosition::new(x, y));
 }
