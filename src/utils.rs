@@ -3,7 +3,10 @@ use gl::types::*;
 use glutin::dpi::LogicalPosition;
 use glutin::window::Window;
 use glutin::{ContextWrapper, PossiblyCurrent};
+use stb_image::image::{load, LoadResult};
+use std::ffi::c_void;
 use std::ffi::CString;
+use std::path::Path;
 use std::ptr;
 use std::str;
 
@@ -79,5 +82,65 @@ pub fn link_program(vs: GLuint, fs: GLuint) -> GLuint {
             );
         }
         program
+    }
+}
+
+pub fn lerp(norm: f32, min: f32, max: f32) -> f32 {
+    (max - min) * norm + min
+}
+
+pub fn map(val: f32, srcmin: f32, srcmax: f32, dstmin: f32, dstmax: f32) -> f32 {
+    lerp(norm(val, srcmin, srcmax), dstmin, dstmax)
+}
+
+pub fn norm(val: f32, min: f32, max: f32) -> f32 {
+    (val - min) / (max - min)
+}
+
+pub fn load_texture(filename: &str, texture: &mut u32) {
+    match load(Path::new(filename)) {
+        LoadResult::Error(s) => {
+            eprintln!("{}", s);
+        }
+        LoadResult::ImageU8(i) => {
+            init_texture(
+                texture,
+                i.width as i32,
+                i.height as i32,
+                i.data.as_ptr() as *const c_void,
+            );
+        }
+        LoadResult::ImageF32(i) => {
+            init_texture(
+                texture,
+                i.width as i32,
+                i.height as i32,
+                i.data.as_ptr() as *const c_void,
+            );
+        }
+    }
+}
+
+fn init_texture(texture: &mut u32, width: i32, height: i32, data: *const c_void) {
+    unsafe {
+        gl::GenTextures(1, texture);
+        gl::ActiveTexture(gl::TEXTURE0);
+        gl::BindTexture(gl::TEXTURE_2D, *texture);
+        gl::TexImage2D(
+            gl::TEXTURE_2D,
+            0,
+            gl::RGBA as i32,
+            width,
+            height,
+            0,
+            gl::RGBA,
+            gl::UNSIGNED_BYTE,
+            data,
+        );
+        gl::GenerateMipmap(gl::TEXTURE_2D);
+        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::CLAMP_TO_EDGE as i32);
+        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::CLAMP_TO_EDGE as i32);
+        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::NEAREST as i32);
+        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::NEAREST as i32);
     }
 }

@@ -1,10 +1,7 @@
 #![allow(dead_code)]
-mod particles01;
-mod particles02;
-mod particles03;
-mod triangle;
+mod texture;
 mod utils;
 
 fn main() {
-    particles03::main();
+    texture::main();
 }
