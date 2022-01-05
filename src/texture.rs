@@ -9,6 +9,7 @@ use glutin::{ContextBuilder, GlProfile};
 use std::ffi::CString;
 use std::mem;
 use std::ptr;
+use std::time::Instant;
 
 static VS_SRC: &str = "
 #version 330
@@ -24,11 +25,20 @@ void main() {
 static FS_SRC: &str = "
 #version 330
 uniform sampler2D u_sampler;
+uniform vec2 u_resolution;
+uniform float u_time;
+
 in vec2 v_texcoord;
 out vec4 out_color;
 
 void main() {
-    out_color = texture(u_sampler, v_texcoord);
+    vec2 uv = gl_FragCoord.xy / u_resolution;
+    vec2 direction = vec2(uv.xy - vec2(0.5, 0.5));
+    uv *= length(direction);
+    uv.x *= cos(u_time * 0.08);
+    uv.y += sin(u_time * 0.03);
+
+    out_color = texture(u_sampler, uv);
 }
 ";
 
@@ -64,6 +74,8 @@ pub fn main() {
     let mut vao = 0;
     let mut vertex_vbo = 0;
     let mut texture = 0;
+    let u_resolution;
+    let u_time;
 
     #[allow(temporary_cstring_as_ptr)]
     unsafe {
@@ -91,7 +103,16 @@ pub fn main() {
         utils::load_texture("bricks.png", &mut texture);
         gl::BindTexture(gl::TEXTURE_2D, texture);
         gl::Uniform1i(u_sampler, 0);
+
+        u_resolution =
+            gl::GetUniformLocation(program, CString::new("u_resolution").unwrap().as_ptr());
+
+        u_time = gl::GetUniformLocation(program, CString::new("u_time").unwrap().as_ptr());
+
+        gl::Uniform2f(u_resolution, width as f32, height as f32);
     }
+
+    let start_time = Instant::now();
 
     el.run(move |event, _, control_flow| {
         context.window().request_redraw();
@@ -114,6 +135,10 @@ pub fn main() {
                 context.swap_buffers().unwrap();
             }
             Event::MainEventsCleared => unsafe {
+                let elapsed_duration = Instant::now().duration_since(start_time).as_secs_f32();
+
+                gl::Uniform1f(u_time, elapsed_duration);
+
                 gl::ClearColor(1.0, 1.0, 1.0, 1.0);
                 gl::Clear(gl::COLOR_BUFFER_BIT);
                 gl::DrawArrays(gl::TRIANGLES, 0, 6);
